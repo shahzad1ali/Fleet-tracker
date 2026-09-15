@@ -9,10 +9,13 @@
     </aside>
     <section class="min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)]">
       <app-map-view
+        [vehicles]="vehicles"
         [truckLocation]="selectedVehicle.liveLocation"
         [driverName]="selectedVehicle.driver"
         [destination]="destination"
         [routeGeometry]="routeGeometry"
+        [focusOnSelectedVehicle]="hasUserSelectedVehicle"
+        (vehicleSelected)="handleVehicleChange($event)"
       />
     </section>
   </section>

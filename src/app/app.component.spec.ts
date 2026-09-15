@@ -24,10 +24,11 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('app-map-view')).not.toBeNull();
   });
 
-  it('should show a default destination before route calculation', () => {
+  it('should keep the fleet visible by default and not preselect a destination', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.destination).toEqual({ lat: 31.4504, lng: 74.2872 });
+    expect(fixture.componentInstance.vehicles.length).toBeGreaterThan(1);
+    expect(fixture.componentInstance.destination).toBeNull();
   });
 });

@@ -11,17 +11,21 @@ import { VehicleService } from './services/vehicle.service';
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  readonly vehicles: Vehicle[];
   selectedVehicle: Vehicle;
-  destination: Coordinate | null = { lat: 31.4504, lng: 74.2872 };
+  destination: Coordinate | null = null;
   routeGeometry: Coordinate[] | null = null;
+  hasUserSelectedVehicle = false;
 
   constructor(vehicleService: VehicleService) {
-    this.selectedVehicle = vehicleService.getVehicles()[0];
+    this.vehicles = vehicleService.getVehicles();
+    this.selectedVehicle = this.vehicles[0];
   }
 
   handleVehicleChange(vehicle: Vehicle): void {
     this.selectedVehicle = vehicle;
     this.routeGeometry = null;
+    this.hasUserSelectedVehicle = true;
   }
 
   handleRouteCalculated(result: RouteResult): void {
