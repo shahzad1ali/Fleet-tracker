@@ -1,0 +1,70 @@
+<section class="flex h-full flex-col gap-6 p-[28px_24px_24px] max-[620px]:p-[22px_18px]">
+  <div class="grid gap-2.5">
+    <label for="vehicle-select" class="flex items-center gap-[9px] text-[0.98rem] font-semibold text-[#3e494f]">
+      <svg class="h-5 w-5 fill-none stroke-[#53636a] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6.5h11v9H3zM14 10h3.5l3 3v2.5H14zM7 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM18 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+      </svg>
+      Vehicle
+    </label>
+    <div class="relative">
+      <select
+        id="vehicle-select"
+        class="min-h-[52px] w-full appearance-none rounded-lg border border-[#dce1e0] bg-white px-4 pr-12 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]"
+        [ngModel]="selectedVehicle.id"
+        (ngModelChange)="selectVehicle($event)"
+      >
+        <option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
+          {{ vehicle.name }} — {{ vehicle.driver }}
+        </option>
+      </select>
+      <svg class="pointer-events-none absolute right-[15px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 fill-none stroke-[#1f292e] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m7 9 5 5 5-5" />
+      </svg>
+    </div>
+  </div>    
+
+  <div class="flex min-h-16 items-center gap-3 rounded-lg bg-[#fbfcfb] px-4">
+    <svg class="h-[25px] w-[25px] shrink-0 fill-none stroke-[#2c9e74] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </svg>
+    <div class="grid gap-[3px]">
+      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Start (live location)</span>
+      <strong class="text-base font-medium text-[#202a2f]">{{ selectedVehicle.liveLocation.lat }}, {{ selectedVehicle.liveLocation.lng }}</strong>
+    </div>
+  </div>
+
+  <div class="grid gap-2.5">
+    <label for="destination" class="text-[0.98rem] font-semibold text-[#3e494f]">Destination</label>
+    <input
+      id="destination"
+      class="min-h-[52px] w-full rounded-lg border border-[#dce1e0] bg-white px-4 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]"
+      type="text"
+      [(ngModel)]="destinationText"
+      placeholder="31.4504, 74.2872"
+      (keyup.enter)="calculateRoute()"
+    />
+  </div>
+
+  <button class="flex min-h-[54px] items-center justify-center gap-2.5 rounded-lg border border-[#cfd7d5] bg-white text-base font-semibold text-[#273238] transition hover:-translate-y-px hover:border-[#2da67e] hover:bg-[#f4fbf8] disabled:cursor-wait disabled:opacity-65" type="button" [disabled]="loading" (click)="calculateRoute()">
+    <svg class="h-[21px] w-[21px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h10a3 3 0 1 1 0 6H9a3 3 0 1 0 0 6h10" />
+      <path d="m7 5-2 2 2 2M17 17l2 2-2 2" />
+    </svg>
+    {{ loading ? 'Calculating...' : 'Calculate route' }}
+  </button>
+
+  <p *ngIf="errorMessage" class="-mt-3 text-[0.86rem] leading-[1.4] text-[#b14343]" role="alert">{{ errorMessage }}</p>
+
+  <div class="mt-auto grid grid-cols-2 gap-4 border-t border-[#e0e4e3] pt-[18px]" aria-live="polite">
+    <div class="grid min-h-[94px] gap-[9px] bg-[#fcfdfc] p-4">
+      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">ETA</span>
+      <strong class="text-[1.72rem] font-medium text-[#1d282e]">{{ routeResult ? (routeResult.etaMinutes | number: '1.0-0') : '--' }} <small class="text-[0.92rem] font-medium text-[#69757a]">min</small></strong>
+    </div>
+    <div class="grid min-h-[94px] gap-[9px] bg-[#fcfdfc] p-4">
+      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Distance</span>
+      <strong class="text-[1.72rem] font-medium text-[#1d282e]">{{ routeResult ? (routeResult.distanceKm | number: '1.1-1') : '--' }} <small class="text-[0.92rem] font-medium text-[#69757a]">km</small></strong>
+    </div>
+  </div>
+</section>
