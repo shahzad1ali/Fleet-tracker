@@ -81,11 +81,11 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
       });
 
       if (isSelected) {
-        marker.bindTooltip(`${vehicle.driver || 'Driver'} · Selected vehicle`, {
+        marker.bindTooltip(vehicle.name, {
           permanent: true,
-          direction: 'right',
-          offset: [12, 0],
-          className: 'live-location-tooltip',
+          direction: 'bottom',
+          offset: [0, 16],
+          className: 'vehicle-name-tooltip',
         }).openTooltip();
       }
 
