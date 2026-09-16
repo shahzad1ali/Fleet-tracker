@@ -38,4 +38,10 @@ export class AppComponent {
   handleDestinationChange(destinations: Coordinate[]): void {
     this.destinations = destinations;
   }
+
+  handleRouteCleared(): void {
+    this.destinations = [];
+    this.routeGeometry = null;
+    this.routeMode = null;
+  }
 }

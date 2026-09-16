@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DecimalDegreePattern,
@@ -30,13 +30,14 @@ export class VehiclePanelComponent {
 
   @Output() routeCalculated = new EventEmitter<RouteResult>();
   @Output() destinationChanged = new EventEmitter<Coordinate[]>();
+  @Output() routeCleared = new EventEmitter<void>();
   @Output() vehicleChanged = new EventEmitter<Vehicle>();
 
   readonly vehicles = this.vehicleService.getVehicles();
   selectedVehicle = this.vehicles[0];
   destinationTexts: string[] = [];
+  destinationRanks: number[] = [];
   draftDestinationText = DefaultDestination;
-  destinationsOpen = false;
   activeRouteMode: 'destination' | 'optimized' | null = null;
   routeResult: RouteResult | null = null;
   loading = false;
@@ -46,15 +47,7 @@ export class VehiclePanelComponent {
   constructor(
     private readonly vehicleService: VehicleService,
     private readonly routeService: RouteService,
-    private readonly elementRef: ElementRef<HTMLElement>,
   ) {}
-
-  @HostListener('document:click', ['$event'])
-  closeDestinationMenuOnOutsideClick(event: MouseEvent): void {
-    if (event.target instanceof Node && !this.elementRef.nativeElement.contains(event.target)) {
-      this.destinationsOpen = false;
-    }
-  }
 
   selectVehicle(vehicleId: string): void {
     const vehicle = this.vehicles.find((item) => item.id === vehicleId);
@@ -68,84 +61,38 @@ export class VehiclePanelComponent {
     this.errorMessage = '';
     this.routeRequestId += 1;
     this.vehicleChanged.emit(vehicle);
+    if (this.destinationTexts.length) {
+      this.calculateRoute();
+    }
   }
 
   calculateRoute(): void {
     this.activeRouteMode = 'destination';
-    const destinations = this.parseDestinations();
-    if (!destinations) {
-      this.routeResult = null;
-      return;
-    }
-
-    const requestId = ++this.routeRequestId;
-    const startCoordinate = { ...this.selectedVehicle.liveLocation };
-    this.routeResult = null;
-    this.loading = true;
-    this.errorMessage = '';
-    this.routeService.calculateRoute(startCoordinate, destinations).subscribe({
-      next: (result) => {
-        if (requestId !== this.routeRequestId) {
-          return;
-        }
-
-        this.routeResult = result;
-        this.destinationChanged.emit(destinations);
-        this.routeCalculated.emit(result);
-        this.loading = false;
-      },
-      error: (error: Error) => {
-        if (requestId !== this.routeRequestId) {
-          return;
-        }
-
-        this.errorMessage = error.message;
-        this.routeResult = null;
-        this.loading = false;
-      },
-    });
+    this.requestRoute(false);
   }
 
   optimizeRoute(): void {
     this.activeRouteMode = 'optimized';
-    const destinations = this.parseDestinations();
-    if (!destinations) {
-      this.routeResult = null;
-      return;
-    }
-
-    const requestId = ++this.routeRequestId;
-    const startCoordinate = { ...this.selectedVehicle.liveLocation };
-    this.routeResult = null;
-    this.loading = true;
-    this.errorMessage = '';
-    this.routeService.calculateRoute(startCoordinate, destinations, true).subscribe({
-      next: (result) => {
-        if (requestId !== this.routeRequestId) return;
-        this.routeResult = result;
-        this.destinationChanged.emit(destinations);
-        this.routeCalculated.emit(result);
-        this.loading = false;
-      },
-      error: (error: Error) => {
-        if (requestId !== this.routeRequestId) return;
-        this.errorMessage = error.message;
-        this.routeResult = null;
-        this.loading = false;
-      },
-    });
+    this.requestRoute(true);
   }
 
   addDestination(): void {
     this.draftDestinationText = '';
-    this.destinationsOpen = true;
     this.errorMessage = '';
   }
 
   removeDestination(index: number): void {
     this.destinationTexts.splice(index, 1);
+    this.destinationRanks.splice(index, 1);
     this.routeResult = null;
     this.errorMessage = '';
+    if (this.destinationTexts.length) {
+      this.calculateRoute();
+    } else {
+      this.activeRouteMode = null;
+      this.destinationChanged.emit([]);
+      this.routeCleared.emit();
+    }
   }
 
   commitDraftDestination(): void {
@@ -158,15 +105,82 @@ export class VehiclePanelComponent {
 
     if (!this.destinationTexts.includes(draft)) {
       this.destinationTexts.push(draft);
+      this.destinationRanks.push(this.destinationTexts.length);
     }
     this.draftDestinationText = '';
-    this.destinationsOpen = false;
     this.errorMessage = '';
+    this.calculateRoute();
   }
 
-  selectDestination(index: number): void {
-    this.draftDestinationText = this.destinationTexts[index];
-    this.destinationsOpen = false;
+  startDestinationDrag(event: DragEvent, index: number): void {
+    event.dataTransfer?.setData('text/plain', String(index));
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  allowDestinationDrop(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  dropDestination(event: DragEvent, targetIndex: number | null): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const sourceIndex = Number(event.dataTransfer?.getData('text/plain'));
+    if (!Number.isInteger(sourceIndex) || sourceIndex < 0 || sourceIndex >= this.destinationTexts.length) {
+      return;
+    }
+
+    if (targetIndex !== null && sourceIndex === targetIndex) {
+      return;
+    }
+
+    const destination = this.destinationTexts.splice(sourceIndex, 1)[0];
+    const insertionIndex = targetIndex === null
+      ? this.destinationTexts.length
+      : Math.min(targetIndex, this.destinationTexts.length);
+    this.destinationTexts.splice(insertionIndex, 0, destination);
+    this.destinationRanks = this.destinationTexts.map((_, index) => index + 1);
+    this.routeResult = null;
+    this.errorMessage = '';
+    this.calculateRoute();
+  }
+
+  private requestRoute(optimize: boolean): void {
+    const destinations = this.parseDestinations();
+    if (!destinations) {
+      this.routeResult = null;
+      return;
+    }
+
+    const requestId = ++this.routeRequestId;
+    const startCoordinate = { ...this.selectedVehicle.liveLocation };
+    this.destinationRanks = destinations.map((_, index) => index + 1);
+    this.routeResult = null;
+    this.loading = true;
+    this.errorMessage = '';
+    this.routeService.calculateRoute(startCoordinate, destinations, optimize).subscribe({
+      next: (result) => {
+        if (requestId !== this.routeRequestId) return;
+        this.routeResult = result;
+        if (result.mode === 'optimized') {
+          this.destinationTexts = this.reorderDestinationTexts(this.destinationTexts, destinations, result.destinations);
+        }
+        this.destinationRanks = this.destinationTexts.map((_, index) => index + 1);
+        this.destinationChanged.emit(result.destinations);
+        this.routeCalculated.emit(result);
+        this.loading = false;
+      },
+      error: (error: Error) => {
+        if (requestId !== this.routeRequestId) return;
+        this.errorMessage = error.message;
+        this.routeResult = null;
+        this.loading = false;
+      },
+    });
   }
 
   private parseDestinations(): Coordinate[] | null {
@@ -183,6 +197,31 @@ export class VehiclePanelComponent {
     }
 
     return destinations as Coordinate[];
+  }
+
+  private reorderDestinationTexts(
+    destinationTexts: string[],
+    destinations: Coordinate[],
+    orderedDestinations: Coordinate[],
+  ): string[] {
+    const remainingIndexes = destinations.map((_, index) => index);
+
+    return orderedDestinations.map((destination) => {
+      const matchingIndex = remainingIndexes.findIndex((index) =>
+        this.sameCoordinate(destinations[index], destination),
+      );
+
+      if (matchingIndex === -1) {
+        return null;
+      }
+
+      const [destinationIndex] = remainingIndexes.splice(matchingIndex, 1);
+      return destinationTexts[destinationIndex];
+    }).filter((destinationText): destinationText is string => destinationText !== null);
+  }
+
+  private sameCoordinate(first: Coordinate, second: Coordinate): boolean {
+    return first.lat === second.lat && first.lng === second.lng;
   }
 
   private parseCoordinate(value: string): Coordinate | null {

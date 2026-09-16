@@ -7,99 +7,28 @@
       Vehicle
     </label>
     <div class="relative">
-      <select
-        id="vehicle-select"
-        class="min-h-[52px] w-full appearance-none rounded-lg border border-[#dce1e0] bg-white px-4 pr-12 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]"
-        [ngModel]="selectedVehicle.id"
-        (ngModelChange)="selectVehicle($event)"
-      >
-        <option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
-          {{ vehicle.name }} — {{ vehicle.driver }}
-        </option>
+      <select id="vehicle-select" class="min-h-[52px] w-full appearance-none rounded-lg border border-[#dce1e0] bg-white px-4 pr-12 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]" [ngModel]="selectedVehicle.id" (ngModelChange)="selectVehicle($event)">
+        <option *ngFor="let vehicle of vehicles" [value]="vehicle.id">{{ vehicle.name }} — {{ vehicle.driver }}</option>
       </select>
-      <svg class="pointer-events-none absolute right-[15px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 fill-none stroke-[#1f292e] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m7 9 5 5 5-5" />
-      </svg>
+      <svg class="pointer-events-none absolute right-[15px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 fill-none stroke-[#1f292e] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5" /></svg>
     </div>
-  </div>    
+  </div>
 
   <div class="flex min-h-16 items-center gap-3 rounded-lg bg-[#fbfcfb] px-4">
-    <svg class="h-[25px] w-[25px] shrink-0 fill-none stroke-[#2c9e74] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </svg>
-    <div class="grid gap-[3px]">
-      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Vehicle live location</span>
-      <strong class="text-base font-medium text-[#202a2f]">{{ selectedVehicle.liveLocation.lat }}, {{ selectedVehicle.liveLocation.lng }}</strong>
-    </div>
+    <svg class="h-[25px] w-[25px] shrink-0 fill-none stroke-[#2c9e74] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+    <div class="grid gap-[3px]"><span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Vehicle live location</span><strong class="text-base font-medium text-[#202a2f]">{{ selectedVehicle.liveLocation.lat }}, {{ selectedVehicle.liveLocation.lng }}</strong></div>
   </div>
 
   <div class="grid gap-2.5">
-    <div class="flex items-center justify-between gap-3">
-      <label for="destination" class="text-[0.98rem] font-semibold text-[#3e494f]">Destination</label>
-      <button class="text-[0.86rem] font-semibold text-[#18845f] transition hover:text-[#0f5e46] disabled:cursor-not-allowed disabled:opacity-50" type="button" [disabled]="loading" (click)="addDestination()">+ Add destination</button>
-    </div>
+    <label for="destination-coordinate" class="text-[0.98rem] font-semibold text-[#3e494f]">Destination</label>
     <div class="relative">
-      <input
-        id="destination-coordinate"
-        class="min-h-[52px] w-full rounded-lg border border-[#dce1e0] bg-white px-4 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]"
-        type="text"
-        [(ngModel)]="draftDestinationText"
-        placeholder="Latitude, longitude (decimal degrees)"
-        (focus)="destinationsOpen = true"
-        (keyup.enter)="commitDraftDestination()"
-      />
-      <svg class="pointer-events-none absolute right-[15px] top-[26px] h-[18px] w-[18px] -translate-y-1/2 fill-none stroke-[#53636a] [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m7 9 5 5 5-5" />
-      </svg>
-      <div *ngIf="destinationsOpen" class="absolute left-0 right-0 z-20 mt-1 grid gap-1 rounded-lg border border-[#dce1e0] bg-white p-1.5 shadow-[0_10px_24px_rgba(40,62,54,0.14)]">
-        <div *ngFor="let destination of destinationTexts; let index = index" class="flex items-center gap-2 rounded-md px-3 py-2 transition hover:bg-[#f4fbf8]" [class.bg-[#f4fbf8]]="draftDestinationText === destination">
-          <button class="min-w-0 flex-1 text-left text-[0.92rem] text-[#273238]" type="button" (click)="selectDestination(index)">
-            <span class="block truncate">{{ destination }}</span>
-          </button>
-          <button
-            *ngIf="destinationTexts.length > 1"
-            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#c2413b] transition hover:bg-[#fff0ef] hover:text-[#9f2f2a]"
-            type="button"
-            title="Remove destination"
-            aria-label="Remove destination"
-            [disabled]="loading"
-            (click)="removeDestination(index)"
-          >
-            <svg class="h-4 w-4 fill-none stroke-current [stroke-linecap:round] [stroke-width:2.2]" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <input id="destination-coordinate" class="min-h-[52px] w-full rounded-lg border border-[#dce1e0] bg-white px-4 pr-24 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]" type="text" [(ngModel)]="draftDestinationText" placeholder="Latitude, longitude (decimal degrees)" (keyup.enter)="commitDraftDestination()" (dragover)="allowDestinationDrop($event)" (drop)="dropDestination($event, null)" />
+      <button class="absolute right-2 top-1/2 flex h-9 -translate-y-1/2 items-center gap-1 rounded-md px-2 text-[0.86rem] font-semibold text-[#386a91] transition hover:bg-[#f3f8fc] hover:text-[#244d6b] disabled:cursor-not-allowed disabled:opacity-50" type="button" title="Add destination" aria-label="Add destination" [disabled]="loading" (click)="commitDraftDestination()"><span>Add</span><svg class="h-5 w-5 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:2]" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
     </div>
-    <div *ngIf="destinationTexts.length" class="flex flex-wrap gap-2" aria-label="Selected destinations">
-      <div *ngFor="let destination of destinationTexts; let index = index" class="flex max-w-full items-center gap-1.5 rounded-md border border-[#b9e3d2] bg-[#f1fbf6] px-2.5 py-1.5 text-[0.8rem] text-[#176b50]">
-        <span class="max-w-[190px] truncate">{{ destination }}</span>
-        <button
-          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#c2413b] transition hover:bg-[#fff0ef] hover:text-[#9f2f2a]"
-          type="button"
-          title="Remove selected destination"
-          aria-label="Remove selected destination"
-          [disabled]="loading"
-          (click)="removeDestination(index)"
-        >
-          <svg class="h-3.5 w-3.5 fill-none stroke-current [stroke-linecap:round] [stroke-width:2.2]" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
-        </button>
-      </div>
+    <div *ngIf="destinationTexts.length" class="grid gap-2" aria-label="Selected destinations">
+      <div *ngFor="let destination of destinationTexts; let index = index" draggable="true" class="flex max-w-full cursor-grab items-center gap-2 rounded-md border border-[#bfd5e6] bg-[#f3f8fc] px-2.5 py-2 text-[0.8rem] text-[#386a91] active:cursor-grabbing" (dragstart)="startDestinationDrag($event, index)" (dragover)="allowDestinationDrop($event)" (drop)="dropDestination($event, index)"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf2f8] text-[0.78rem] font-semibold text-[#386a91]" aria-hidden="true">{{ destinationRanks[index] || index + 1 }}</span><span class="min-w-0 flex-1 truncate">{{ destination }}</span><button class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#c2413b] transition hover:bg-[#fff0ef] hover:text-[#9f2f2a]" type="button" title="Remove selected destination" aria-label="Remove selected destination" [disabled]="loading" (click)="removeDestination(index)"><svg class="h-3.5 w-3.5 fill-none stroke-current [stroke-linecap:round] [stroke-width:2.2]" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18" /></svg></button></div>
     </div>
   </div>
-
-  <button class="flex min-h-[54px] items-center justify-center gap-2.5 rounded-lg border text-base font-semibold transition hover:-translate-y-px disabled:cursor-wait disabled:opacity-65" [ngClass]="activeRouteMode === 'destination' ? 'border-[#1776d2] bg-[#1776d2] text-white shadow-[0_6px_16px_rgba(23,118,210,0.2)]' : 'border-[#cfd7d5] bg-white text-[#273238] hover:border-[#1776d2] hover:bg-[#f4f8fd]'" type="button" [disabled]="loading" (click)="calculateRoute()">
-    <svg class="h-[21px] w-[21px] fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8]" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 7h10a3 3 0 1 1 0 6H9a3 3 0 1 0 0 6h10" />
-      <path d="m7 5-2 2 2 2M17 17l2 2-2 2" />
-    </svg>
-    {{ loading ? 'Calculating...' : 'Calculate route' }}
-  </button>
 
   <button class="flex min-h-[50px] items-center justify-center gap-2 rounded-lg border text-base font-semibold transition hover:-translate-y-px disabled:cursor-wait disabled:opacity-65" [ngClass]="activeRouteMode === 'optimized' ? 'border-[#e0522d] bg-[#e0522d] text-white shadow-[0_6px_16px_rgba(224,82,45,0.2)]' : 'border-[#cfd7d5] bg-white text-[#273238] hover:border-[#e0522d] hover:bg-[#fff7f4]'" type="button" [disabled]="loading" (click)="optimizeRoute()">
     Optimize route

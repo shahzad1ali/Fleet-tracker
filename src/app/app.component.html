@@ -5,6 +5,7 @@
         [selectedVehicleId]="selectedVehicle.id"
         (routeCalculated)="handleRouteCalculated($event)"
         (destinationChanged)="handleDestinationChange($event)"
+        (routeCleared)="handleRouteCleared()"
         (vehicleChanged)="handleVehicleChange($event)"
       />
     </aside>

@@ -1,6 +1,6 @@
 import { Vehicle } from '../models/vehicle.model';
 
-export const DefaultDestination = '32.6164, -117.0847';
+export const DefaultDestination = '';
 
 export const FLEET_VEHICLES: readonly Vehicle[] = [
   {

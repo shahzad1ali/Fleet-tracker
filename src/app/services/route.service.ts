@@ -12,6 +12,10 @@ interface OsrmRouteResponse {
     geometry: {
       coordinates: [number, number][];
     };
+    waypoints?: Array<{
+      waypoint_index: number;
+      location: [number, number];
+    }>;
   }>;
   trips?: Array<{
     distance: number;
@@ -19,6 +23,10 @@ interface OsrmRouteResponse {
     geometry: {
       coordinates: [number, number][];
     };
+    waypoints?: Array<{
+      waypoint_index: number;
+      location: [number, number];
+    }>;
   }>;
 }
 
@@ -42,11 +50,15 @@ export class RouteService {
           throw new Error('OSRM did not return a route for these coordinates.');
         }
 
+        const orderedDestinations = useTripEndpoint
+          ? this.getOptimizedDestinations(destinations, route.waypoints)
+          : destinations;
+
         return {
           distanceKm: route.distance / 1000,
           etaMinutes: route.duration / 60,
           geometry: route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })),
-          destinations,
+          destinations: orderedDestinations,
           mode: optimize ? ('optimized' as const) : ('destination' as const),
         };
       }),
@@ -54,5 +66,21 @@ export class RouteService {
         throwError(() => new Error('Unable to calculate the route. Please try again.')),
       ),
     );
+  }
+
+  private getOptimizedDestinations(
+    destinations: Coordinate[],
+    waypoints?: Array<{ waypoint_index: number; location: [number, number] }>,
+  ): Coordinate[] {
+    if (!waypoints || waypoints.length !== destinations.length + 1) {
+      return destinations;
+    }
+
+    // OSRM returns waypoints in input order; waypoint_index is their optimized visit order.
+    return waypoints
+      .map((waypoint, inputIndex) => ({ waypoint, inputIndex }))
+      .filter(({ inputIndex }) => inputIndex > 0)
+      .sort((first, second) => first.waypoint.waypoint_index - second.waypoint.waypoint_index)
+      .map(({ inputIndex }) => destinations[inputIndex - 1]);
   }
 }

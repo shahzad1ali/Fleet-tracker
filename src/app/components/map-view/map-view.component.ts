@@ -111,7 +111,11 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
         weight: 2,
         fillColor: '#1f9d75',
         fillOpacity: 0.95,
-      }).bindTooltip(`Stop ${index + 1}`, { direction: 'top' }).addTo(this.map!));
+      }).bindTooltip(`${index + 1}`, {
+        permanent: true,
+        direction: 'center',
+        className: 'destination-number-tooltip',
+      }).addTo(this.map!));
     }
 
     if (this.routeGeometry?.length) {
