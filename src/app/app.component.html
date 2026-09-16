@@ -12,8 +12,9 @@
       <app-map-view
         [vehicles]="vehicles"
         [selectedVehicleLocation]="selectedVehicle.liveLocation"
-        [destination]="destination"
+        [destinations]="destinations"
         [routeGeometry]="routeGeometry"
+        [routeMode]="routeMode"
         [focusOnSelectedVehicle]="hasUserSelectedVehicle"
         (vehicleSelected)="handleVehicleChange($event)"
       />

@@ -13,8 +13,9 @@ import { VehicleService } from './services/vehicle.service';
 export class AppComponent {
   readonly vehicles: Vehicle[];
   selectedVehicle: Vehicle;
-  destination: Coordinate | null = null;
+  destinations: Coordinate[] = [];
   routeGeometry: Coordinate[] | null = null;
+  routeMode: 'destination' | 'optimized' | null = null;
   hasUserSelectedVehicle = false;
 
   constructor(vehicleService: VehicleService) {
@@ -25,14 +26,16 @@ export class AppComponent {
   handleVehicleChange(vehicle: Vehicle): void {
     this.selectedVehicle = vehicle;
     this.routeGeometry = null;
+    this.routeMode = null;
     this.hasUserSelectedVehicle = true;
   }
 
   handleRouteCalculated(result: RouteResult): void {
     this.routeGeometry = result.geometry;
+    this.routeMode = result.mode;
   }
 
-  handleDestinationChange(destination: Coordinate): void {
-    this.destination = destination;
+  handleDestinationChange(destinations: Coordinate[]): void {
+    this.destinations = destinations;
   }
 }

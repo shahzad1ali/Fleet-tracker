@@ -14,4 +14,6 @@ export interface RouteResult {
   distanceKm: number;
   etaMinutes: number;
   geometry: Coordinate[];
+  destinations: Coordinate[];
+  mode: 'destination' | 'optimized';
 }

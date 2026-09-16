@@ -1,12 +1,19 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { OsrmRouteOptions, OsrmRouteUrl } from '../constants/route.constants';
+import { OsrmRouteOptions, OsrmRouteUrl, OsrmTripUrl } from '../constants/route.constants';
 import { Coordinate, RouteResult } from '../models/vehicle.model';
 
 interface OsrmRouteResponse {
   code: string;
   routes?: Array<{
+    distance: number;
+    duration: number;
+    geometry: {
+      coordinates: [number, number][];
+    };
+  }>;
+  trips?: Array<{
     distance: number;
     duration: number;
     geometry: {
@@ -19,12 +26,18 @@ interface OsrmRouteResponse {
 export class RouteService {
   constructor(private readonly http: HttpClient) {}
 
-  calculateRoute(startCoordinate: Coordinate, endCoordinate: Coordinate): Observable<RouteResult> {
-    const url = `${OsrmRouteUrl}/${startCoordinate.lng},${startCoordinate.lat};${endCoordinate.lng},${endCoordinate.lat}?${OsrmRouteOptions}`;
+  calculateRoute(startCoordinate: Coordinate, destinations: Coordinate[], optimize = false): Observable<RouteResult> {
+    const coordinates = [startCoordinate, ...destinations]
+      .map((coordinate) => `${coordinate.lng},${coordinate.lat}`)
+      .join(';');
+    const useTripEndpoint = optimize && destinations.length > 1;
+    const baseUrl = useTripEndpoint ? OsrmTripUrl : OsrmRouteUrl;
+    const options = useTripEndpoint ? `${OsrmRouteOptions}&roundtrip=false&source=first&destination=last` : OsrmRouteOptions;
+    const url = `${baseUrl}/${coordinates}?${options}`;
 
     return this.http.get<OsrmRouteResponse>(url).pipe(
       map((response) => {
-        const route = response.routes?.[0];
+        const route = (useTripEndpoint ? response.trips?.[0] : response.routes?.[0]);
         if (response.code !== 'Ok' || !route) {
           throw new Error('OSRM did not return a route for these coordinates.');
         }
@@ -33,6 +46,8 @@ export class RouteService {
           distanceKm: route.distance / 1000,
           etaMinutes: route.duration / 60,
           geometry: route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })),
+          destinations,
+          mode: optimize ? ('optimized' as const) : ('destination' as const),
         };
       }),
       catchError(() =>

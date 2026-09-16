@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   DecimalDegreePattern,
@@ -29,12 +29,15 @@ export class VehiclePanelComponent {
   }
 
   @Output() routeCalculated = new EventEmitter<RouteResult>();
-  @Output() destinationChanged = new EventEmitter<Coordinate>();
+  @Output() destinationChanged = new EventEmitter<Coordinate[]>();
   @Output() vehicleChanged = new EventEmitter<Vehicle>();
 
   readonly vehicles = this.vehicleService.getVehicles();
   selectedVehicle = this.vehicles[0];
-  destinationText = DefaultDestination;
+  destinationTexts: string[] = [];
+  draftDestinationText = DefaultDestination;
+  destinationsOpen = false;
+  activeRouteMode: 'destination' | 'optimized' | null = null;
   routeResult: RouteResult | null = null;
   loading = false;
   errorMessage = '';
@@ -43,7 +46,15 @@ export class VehiclePanelComponent {
   constructor(
     private readonly vehicleService: VehicleService,
     private readonly routeService: RouteService,
+    private readonly elementRef: ElementRef<HTMLElement>,
   ) {}
+
+  @HostListener('document:click', ['$event'])
+  closeDestinationMenuOnOutsideClick(event: MouseEvent): void {
+    if (event.target instanceof Node && !this.elementRef.nativeElement.contains(event.target)) {
+      this.destinationsOpen = false;
+    }
+  }
 
   selectVehicle(vehicleId: string): void {
     const vehicle = this.vehicles.find((item) => item.id === vehicleId);
@@ -53,31 +64,33 @@ export class VehiclePanelComponent {
 
     this.selectedVehicle = vehicle;
     this.routeResult = null;
+    this.activeRouteMode = null;
     this.errorMessage = '';
     this.routeRequestId += 1;
     this.vehicleChanged.emit(vehicle);
   }
 
   calculateRoute(): void {
-    const destination = this.parseCoordinate(this.destinationText);
-    if (!destination) {
-      this.errorMessage = this.getCoordinateError(this.destinationText);
+    this.activeRouteMode = 'destination';
+    const destinations = this.parseDestinations();
+    if (!destinations) {
       this.routeResult = null;
       return;
     }
 
     const requestId = ++this.routeRequestId;
     const startCoordinate = { ...this.selectedVehicle.liveLocation };
+    this.routeResult = null;
     this.loading = true;
     this.errorMessage = '';
-    this.routeService.calculateRoute(startCoordinate, destination).subscribe({
+    this.routeService.calculateRoute(startCoordinate, destinations).subscribe({
       next: (result) => {
         if (requestId !== this.routeRequestId) {
           return;
         }
 
         this.routeResult = result;
-        this.destinationChanged.emit(destination);
+        this.destinationChanged.emit(destinations);
         this.routeCalculated.emit(result);
         this.loading = false;
       },
@@ -91,6 +104,85 @@ export class VehiclePanelComponent {
         this.loading = false;
       },
     });
+  }
+
+  optimizeRoute(): void {
+    this.activeRouteMode = 'optimized';
+    const destinations = this.parseDestinations();
+    if (!destinations) {
+      this.routeResult = null;
+      return;
+    }
+
+    const requestId = ++this.routeRequestId;
+    const startCoordinate = { ...this.selectedVehicle.liveLocation };
+    this.routeResult = null;
+    this.loading = true;
+    this.errorMessage = '';
+    this.routeService.calculateRoute(startCoordinate, destinations, true).subscribe({
+      next: (result) => {
+        if (requestId !== this.routeRequestId) return;
+        this.routeResult = result;
+        this.destinationChanged.emit(destinations);
+        this.routeCalculated.emit(result);
+        this.loading = false;
+      },
+      error: (error: Error) => {
+        if (requestId !== this.routeRequestId) return;
+        this.errorMessage = error.message;
+        this.routeResult = null;
+        this.loading = false;
+      },
+    });
+  }
+
+  addDestination(): void {
+    this.draftDestinationText = '';
+    this.destinationsOpen = true;
+    this.errorMessage = '';
+  }
+
+  removeDestination(index: number): void {
+    this.destinationTexts.splice(index, 1);
+    this.routeResult = null;
+    this.errorMessage = '';
+  }
+
+  commitDraftDestination(): void {
+    const draft = this.draftDestinationText.trim();
+    const destination = this.parseCoordinate(draft);
+    if (!destination) {
+      this.errorMessage = this.getCoordinateError(draft);
+      return;
+    }
+
+    if (!this.destinationTexts.includes(draft)) {
+      this.destinationTexts.push(draft);
+    }
+    this.draftDestinationText = '';
+    this.destinationsOpen = false;
+    this.errorMessage = '';
+  }
+
+  selectDestination(index: number): void {
+    this.draftDestinationText = this.destinationTexts[index];
+    this.destinationsOpen = false;
+  }
+
+  private parseDestinations(): Coordinate[] | null {
+    if (!this.destinationTexts.length) {
+      this.errorMessage = 'Add at least one destination before calculating a route.';
+      return null;
+    }
+
+    const destinations = this.destinationTexts.map((destinationText) => this.parseCoordinate(destinationText));
+    const invalidIndex = destinations.findIndex((destination) => !destination);
+    if (invalidIndex !== -1) {
+      this.errorMessage = this.getCoordinateError(this.destinationTexts[invalidIndex]);
+      return null;
+    }
+
+    return destinations as Coordinate[];
   }
 
   private parseCoordinate(value: string): Coordinate | null {

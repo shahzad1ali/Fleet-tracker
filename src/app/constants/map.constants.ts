@@ -8,5 +8,6 @@ export const MapFitPadding: [number, number] = [32, 32];
 export const MapTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 export const MapAttribution = '&copy; OpenStreetMap contributors';
 export const RouteColor = '#1776d2';
+export const OptimizedRouteColor = '#e0522d';
 export const RouteWeight = 4;
 export const RouteOpacity = 0.9;

@@ -31,6 +31,6 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.vehicles.length).toBeGreaterThan(1);
-    expect(fixture.componentInstance.destination).toBeNull();
+    expect(fixture.componentInstance.destinations).toEqual([]);
   });
 });
