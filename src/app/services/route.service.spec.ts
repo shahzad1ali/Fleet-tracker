@@ -3,7 +3,7 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { OsrmRouteOptions, OsrmRouteUrl } from '../constants/route.constants';
+import { OsrmRouteOptions, OsrmRouteUrl, OsrmTripOptions, OsrmTripUrl } from '../constants/route.constants';
 import { RouteService } from './route.service';
 
 describe('RouteService', () => {
@@ -22,7 +22,7 @@ describe('RouteService', () => {
     httpMock.verify();
   });
 
-  it('should map a successful OSRM response', () => {
+  it('should map a successful OSRM route response', () => {
     const start = { lat: 32.64, lng: -117.08 };
     const destinations = [{ lat: 32.639, lng: -117.088 }];
 
@@ -55,7 +55,7 @@ describe('RouteService', () => {
     });
   });
 
-  it('should reorder destinations with nearest-neighbor when optimizing', () => {
+  it('should use OSRM Trip and reorder destinations when optimizing', () => {
     const start = { lat: 32.6401, lng: -117.0842 };
     const destinations = [
       { lat: 32.642497, lng: -117.089411 },
@@ -65,16 +65,23 @@ describe('RouteService', () => {
 
     service.calculateRoute(start, destinations, true).subscribe((result) => {
       expect(result.mode).toBe('optimized');
-      expect(result.destinations[0]).toEqual(destinations[1]);
-      expect(result.destinations[1]).toEqual(destinations[2]);
-      expect(result.destinations[2]).toEqual(destinations[0]);
-      expect(result.destinations.length).toBe(3);
+      expect(result.destinations).toEqual([destinations[1], destinations[0], destinations[2]]);
+      expect(result.distanceKm).toBe(1.6);
     });
 
-    const request = httpMock.expectOne((req) => req.url.startsWith(OsrmRouteUrl));
+    const request = httpMock.expectOne(
+      `${OsrmTripUrl}/-117.0842,32.6401;-117.089411,32.642497;-117.088016,32.639034;-117.086714,32.635572?${OsrmTripOptions}`,
+    );
+    expect(request.request.method).toBe('GET');
     request.flush({
       code: 'Ok',
-      routes: [
+      waypoints: [
+        { waypoint_index: 0, location: [-117.0842, 32.6401] },
+        { waypoint_index: 2, location: [-117.089411, 32.642497] },
+        { waypoint_index: 1, location: [-117.088016, 32.639034] },
+        { waypoint_index: 3, location: [-117.086714, 32.635572] },
+      ],
+      trips: [
         {
           distance: 1600,
           duration: 120,

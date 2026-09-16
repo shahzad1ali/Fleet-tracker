@@ -22,13 +22,13 @@ Open `http://localhost:4200/`.
 
 ## Optimize route
 
-**Optimize route** orders stops with a nearest-neighbor heuristic:
+**Optimize route** uses the OSRM **Trip** service to find a short open tour:
 
-1. Closest stop to the selected vehicle
-2. Closest remaining stop to that stop
-3. Repeat until all stops are visited
+- Vehicle is fixed as the start (`source=first`)
+- Stops may be reordered to reduce total distance/time
+- End stop is chosen freely (`destination=any`, `roundtrip=false`)
 
-Then OSRM returns the driving geometry for that order (`continue_straight=false` so U-turns at stops are allowed).
+Adding stops without Optimize keeps the order you entered and uses the OSRM **Route** service.
 
 ## Routing / map configuration
 
