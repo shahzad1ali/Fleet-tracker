@@ -9,6 +9,7 @@ import { VehicleService } from './services/vehicle.service';
   standalone: true,
   imports: [MapViewComponent, VehiclePanelComponent],
   templateUrl: './app.component.html',
+  host: { class: 'block h-full' },
 })
 export class AppComponent {
   readonly vehicles: Vehicle[];

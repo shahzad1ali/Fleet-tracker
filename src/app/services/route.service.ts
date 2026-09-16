@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { OsrmRouteOptions, OsrmRouteUrl, OsrmTripUrl } from '../constants/route.constants';
+import { OsrmRouteOptions, OsrmRouteUrl } from '../constants/route.constants';
 import { Coordinate, RouteResult } from '../models/vehicle.model';
 
 interface OsrmRouteResponse {
@@ -12,21 +12,6 @@ interface OsrmRouteResponse {
     geometry: {
       coordinates: [number, number][];
     };
-    waypoints?: Array<{
-      waypoint_index: number;
-      location: [number, number];
-    }>;
-  }>;
-  trips?: Array<{
-    distance: number;
-    duration: number;
-    geometry: {
-      coordinates: [number, number][];
-    };
-    waypoints?: Array<{
-      waypoint_index: number;
-      location: [number, number];
-    }>;
   }>;
 }
 
@@ -35,24 +20,20 @@ export class RouteService {
   constructor(private readonly http: HttpClient) {}
 
   calculateRoute(startCoordinate: Coordinate, destinations: Coordinate[], optimize = false): Observable<RouteResult> {
-    const coordinates = [startCoordinate, ...destinations]
+    const orderedDestinations = optimize
+      ? this.orderNearestNeighbor(startCoordinate, destinations)
+      : destinations;
+    const coordinates = [startCoordinate, ...orderedDestinations]
       .map((coordinate) => `${coordinate.lng},${coordinate.lat}`)
       .join(';');
-    const useTripEndpoint = optimize && destinations.length > 1;
-    const baseUrl = useTripEndpoint ? OsrmTripUrl : OsrmRouteUrl;
-    const options = useTripEndpoint ? `${OsrmRouteOptions}&roundtrip=false&source=first&destination=last` : OsrmRouteOptions;
-    const url = `${baseUrl}/${coordinates}?${options}`;
+    const url = `${OsrmRouteUrl}/${coordinates}?${OsrmRouteOptions}`;
 
     return this.http.get<OsrmRouteResponse>(url).pipe(
       map((response) => {
-        const route = (useTripEndpoint ? response.trips?.[0] : response.routes?.[0]);
+        const route = response.routes?.[0];
         if (response.code !== 'Ok' || !route) {
           throw new Error('OSRM did not return a route for these coordinates.');
         }
-
-        const orderedDestinations = useTripEndpoint
-          ? this.getOptimizedDestinations(destinations, route.waypoints)
-          : destinations;
 
         return {
           distanceKm: route.distance / 1000,
@@ -68,19 +49,45 @@ export class RouteService {
     );
   }
 
-  private getOptimizedDestinations(
-    destinations: Coordinate[],
-    waypoints?: Array<{ waypoint_index: number; location: [number, number] }>,
-  ): Coordinate[] {
-    if (!waypoints || waypoints.length !== destinations.length + 1) {
-      return destinations;
+  private orderNearestNeighbor(start: Coordinate, destinations: Coordinate[]): Coordinate[] {
+    const remaining = [...destinations];
+    const ordered: Coordinate[] = [];
+    let current = start;
+
+    while (remaining.length) {
+      let nearestIndex = 0;
+      let nearestDistance = this.distanceMeters(current, remaining[0]);
+
+      for (let index = 1; index < remaining.length; index += 1) {
+        const distance = this.distanceMeters(current, remaining[index]);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      }
+
+      const [nextStop] = remaining.splice(nearestIndex, 1);
+      ordered.push(nextStop);
+      current = nextStop;
     }
 
-    // OSRM returns waypoints in input order; waypoint_index is their optimized visit order.
-    return waypoints
-      .map((waypoint, inputIndex) => ({ waypoint, inputIndex }))
-      .filter(({ inputIndex }) => inputIndex > 0)
-      .sort((first, second) => first.waypoint.waypoint_index - second.waypoint.waypoint_index)
-      .map(({ inputIndex }) => destinations[inputIndex - 1]);
+    return ordered;
+  }
+
+  private distanceMeters(from: Coordinate, to: Coordinate): number {
+    const earthRadiusMeters = 6371000;
+    const latitudeDelta = this.toRadians(to.lat - from.lat);
+    const longitudeDelta = this.toRadians(to.lng - from.lng);
+    const originLatitude = this.toRadians(from.lat);
+    const destinationLatitude = this.toRadians(to.lat);
+    const haversine =
+      Math.sin(latitudeDelta / 2) ** 2 +
+      Math.cos(originLatitude) * Math.cos(destinationLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+
+    return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  }
+
+  private toRadians(degrees: number): number {
+    return (degrees * Math.PI) / 180;
   }
 }

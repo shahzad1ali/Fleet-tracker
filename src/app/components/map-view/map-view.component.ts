@@ -41,6 +41,8 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngAfterViewInit(): void {
     this.initializeMap();
     this.updateLayers();
+    window.addEventListener('resize', this.onWindowResize);
+    setTimeout(() => this.map?.invalidateSize());
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -50,8 +52,13 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onWindowResize);
     this.map?.remove();
   }
+
+  private readonly onWindowResize = (): void => {
+    this.map?.invalidateSize();
+  };
 
   private initializeMap(): void {
     this.map = L.map(this.mapElement.nativeElement, {

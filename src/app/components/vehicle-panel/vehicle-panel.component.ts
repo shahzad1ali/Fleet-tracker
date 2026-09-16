@@ -18,6 +18,7 @@ import { VehicleService } from '../../services/vehicle.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './vehicle-panel.component.html',
+  host: { class: 'block h-full' },
 })
 
 export class VehiclePanelComponent {
@@ -241,7 +242,7 @@ export class VehiclePanelComponent {
   private getCoordinateError(value: string): string {
     const parts = value.split(',').map((part) => part.trim());
     if (parts.length !== 2 || parts.some((part) => !DecimalDegreePattern.test(part))) {
-      return 'Enter coordinates as decimal degrees: latitude, longitude.';
+      return 'Enter coordinates as latitude, longitude.';
     }
 
     const [lat, lng] = parts.map((part) => Number(part));

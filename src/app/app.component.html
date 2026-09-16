@@ -1,6 +1,6 @@
-<main class="min-h-screen box-border bg-[#f3f6f4] px-[clamp(18px,5vw,72px)] py-6 pb-10">
-  <section class="mx-auto grid min-h-[660px] max-w-[1320px] grid-cols-[minmax(320px,404px)_minmax(0,1fr)] gap-5 max-[820px]:grid-cols-1 max-[820px]:min-h-0">
-    <aside class="min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)] max-[820px]:min-h-[560px]">
+<main class="box-border h-full w-full overflow-hidden bg-[#f3f6f4] p-5 max-[820px]:p-3">
+  <section class="grid h-full grid-cols-[minmax(320px,404px)_minmax(0,1fr)] gap-5 max-[820px]:grid-cols-1 max-[820px]:grid-rows-[auto_minmax(0,1fr)] max-[820px]:gap-3">
+    <aside class="min-h-0 min-w-0 overflow-auto rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)]">
       <app-vehicle-panel
         [selectedVehicleId]="selectedVehicle.id"
         (routeCalculated)="handleRouteCalculated($event)"
@@ -9,7 +9,7 @@
         (vehicleChanged)="handleVehicleChange($event)"
       />
     </aside>
-    <section class="min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)]">
+    <section class="min-h-0 min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)] max-[820px]:min-h-[55vh]">
       <app-map-view
         [vehicles]="vehicles"
         [selectedVehicleLocation]="selectedVehicle.liveLocation"
