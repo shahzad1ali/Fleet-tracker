@@ -1,7 +1,5 @@
 import { Vehicle } from '../models/vehicle.model';
 
-export const DefaultDestination = '';
-
 export const FLEET_VEHICLES: readonly Vehicle[] = [
   {
     id: 'truck-104',

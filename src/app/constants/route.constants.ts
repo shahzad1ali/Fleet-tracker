@@ -1,2 +1,4 @@
-export const OsrmRouteUrl = 'https://router.project-osrm.org/route/v1/driving';
-export const OsrmRouteOptions = 'overview=full&geometries=geojson&continue_straight=false';
+import { environment } from '../../environments/environment';
+
+export const OsrmRouteUrl = environment.osrmRouteUrl;
+export const OsrmRouteOptions = environment.osrmRouteOptions;

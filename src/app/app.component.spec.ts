@@ -3,6 +3,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { FleetStateService } from './services/fleet-state.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -14,8 +15,7 @@ describe('AppComponent', () => {
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('should render the fleet tracker dashboard', () => {
@@ -29,8 +29,9 @@ describe('AppComponent', () => {
   it('should keep the fleet visible by default and not preselect a destination', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
+    const fleetState = TestBed.inject(FleetStateService);
 
-    expect(fixture.componentInstance.vehicles.length).toBeGreaterThan(1);
-    expect(fixture.componentInstance.destinations).toEqual([]);
+    expect(fleetState.snapshot.vehicles.length).toBeGreaterThan(1);
+    expect(fleetState.snapshot.destinations).toEqual([]);
   });
 });

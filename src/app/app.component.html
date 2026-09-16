@@ -1,23 +1,17 @@
-<main class="box-border h-full w-full overflow-hidden bg-[#f3f6f4] p-5 max-[820px]:p-3">
+<main class="box-border h-full w-full overflow-hidden bg-[#f3f6f4] p-5 max-[820px]:p-3" *ngIf="state$ | async as state">
   <section class="grid h-full grid-cols-[minmax(320px,404px)_minmax(0,1fr)] gap-5 max-[820px]:grid-cols-1 max-[820px]:grid-rows-[auto_minmax(0,1fr)] max-[820px]:gap-3">
     <aside class="min-h-0 min-w-0 overflow-auto rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)]">
-      <app-vehicle-panel
-        [selectedVehicleId]="selectedVehicle.id"
-        (routeCalculated)="handleRouteCalculated($event)"
-        (destinationChanged)="handleDestinationChange($event)"
-        (routeCleared)="handleRouteCleared()"
-        (vehicleChanged)="handleVehicleChange($event)"
-      />
+      <app-vehicle-panel />
     </aside>
     <section class="min-h-0 min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)] max-[820px]:min-h-[55vh]">
       <app-map-view
-        [vehicles]="vehicles"
-        [selectedVehicleLocation]="selectedVehicle.liveLocation"
-        [destinations]="destinations"
-        [routeGeometry]="routeGeometry"
-        [routeMode]="routeMode"
-        [focusOnSelectedVehicle]="hasUserSelectedVehicle"
-        (vehicleSelected)="handleVehicleChange($event)"
+        [vehicles]="state.vehicles"
+        [selectedVehicleId]="state.selectedVehicleId"
+        [destinations]="state.destinations"
+        [routeGeometry]="state.routeResult?.geometry ?? null"
+        [routeMode]="state.routeMode"
+        [focusOnSelectedVehicle]="state.hasUserSelectedVehicle"
+        (vehicleSelected)="selectVehicle($event.id)"
       />
     </section>
   </section>

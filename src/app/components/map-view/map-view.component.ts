@@ -1,9 +1,10 @@
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, AfterViewInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import * as L from 'leaflet';
 import {
   DefaultMapCenter,
   DefaultMapZoom,
+  DestinationMarkerFill,
+  DestinationMarkerStroke,
   MapAttribution,
   MapFitMaximumZoom,
   MapFitPadding,
@@ -13,20 +14,23 @@ import {
   RouteColor,
   RouteOpacity,
   RouteWeight,
+  SelectedVehicleFill,
+  VehicleFill,
+  VehicleMarkerStroke,
 } from '../../constants/map.constants';
 import { Coordinate, Vehicle } from '../../models/vehicle.model';
 
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './map-view.component.html',
   styleUrl: './map-view.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Output() vehicleSelected = new EventEmitter<Vehicle>();
   @Input() vehicles: Vehicle[] = [];
-  @Input() selectedVehicleLocation: Coordinate | null = null;
+  @Input() selectedVehicleId: string | null = null;
   @Input() destinations: Coordinate[] = [];
   @Input() routeGeometry: Coordinate[] | null = null;
   @Input() routeMode: 'destination' | 'optimized' | null = null;
@@ -37,22 +41,34 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   private destinationMarkers: L.CircleMarker[] = [];
   private routePolyline: L.Polyline | null = null;
   private vehicleMarkers: L.CircleMarker[] = [];
+  private resizeTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   ngAfterViewInit(): void {
     this.initializeMap();
     this.updateLayers();
     window.addEventListener('resize', this.onWindowResize);
-    setTimeout(() => this.map?.invalidateSize());
+    this.resizeTimeoutId = setTimeout(() => this.map?.invalidateSize());
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.map && (changes['vehicles'] || changes['selectedVehicleLocation'] || changes['destinations'] || changes['routeGeometry'] || changes['routeMode'] || changes['focusOnSelectedVehicle'])) {
+    if (
+      this.map &&
+      (changes['vehicles'] ||
+        changes['selectedVehicleId'] ||
+        changes['destinations'] ||
+        changes['routeGeometry'] ||
+        changes['routeMode'] ||
+        changes['focusOnSelectedVehicle'])
+    ) {
       this.updateLayers();
     }
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onWindowResize);
+    if (this.resizeTimeoutId !== null) {
+      clearTimeout(this.resizeTimeoutId);
+    }
     this.map?.remove();
   }
 
@@ -84,13 +100,15 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.vehicleMarkers.forEach((marker) => marker.remove());
     this.vehicleMarkers = [];
 
+    const selectedVehicle = this.vehicles.find((vehicle) => vehicle.id === this.selectedVehicleId) ?? null;
+
     this.vehicles.forEach((vehicle) => {
-      const isSelected = this.selectedVehicleLocation && vehicle.liveLocation.lat === this.selectedVehicleLocation.lat && vehicle.liveLocation.lng === this.selectedVehicleLocation.lng;
+      const isSelected = vehicle.id === this.selectedVehicleId;
       const marker = L.circleMarker(this.toLeafletCoordinates(vehicle.liveLocation), {
         radius: isSelected ? 10 : 7,
-        color: '#ffffff',
+        color: VehicleMarkerStroke,
         weight: 3,
-        fillColor: isSelected ? '#0f766e' : '#22c55e',
+        fillColor: isSelected ? SelectedVehicleFill : VehicleFill,
         fillOpacity: 1,
       }).addTo(this.map!);
 
@@ -100,45 +118,54 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
       });
 
       if (isSelected) {
-        marker.bindTooltip(vehicle.name, {
-          permanent: true,
-          direction: 'bottom',
-          offset: [0, 16],
-          className: 'vehicle-name-tooltip',
-        }).openTooltip();
+        marker
+          .bindTooltip(vehicle.name, {
+            permanent: true,
+            direction: 'bottom',
+            offset: [0, 16],
+            className: 'vehicle-name-tooltip',
+          })
+          .openTooltip();
       }
 
       this.vehicleMarkers.push(marker);
     });
 
     if (this.destinations.length && this.routeGeometry?.length) {
-      this.destinationMarkers = this.destinations.map((destination, index) => L.circleMarker(this.toLeafletCoordinates(destination), {
-        radius: 12,
-        color: '#14532d',
-        weight: 2,
-        fillColor: '#1f9d75',
-        fillOpacity: 0.95,
-      }).bindTooltip(`${index + 1}`, {
-        permanent: true,
-        direction: 'center',
-        className: 'destination-number-tooltip',
-      }).addTo(this.map!));
+      this.destinationMarkers = this.destinations.map((destination, index) =>
+        L.circleMarker(this.toLeafletCoordinates(destination), {
+          radius: 12,
+          color: DestinationMarkerStroke,
+          weight: 2,
+          fillColor: DestinationMarkerFill,
+          fillOpacity: 0.95,
+        })
+          .bindTooltip(`${index + 1}`, {
+            permanent: true,
+            direction: 'center',
+            className: 'destination-number-tooltip',
+          })
+          .addTo(this.map!),
+      );
     }
 
     if (this.routeGeometry?.length) {
-      this.routePolyline = L.polyline(this.routeGeometry.map((point) => this.toLeafletCoordinates(point)), {
-        color: this.routeMode === 'optimized' ? OptimizedRouteColor : RouteColor,
-        weight: RouteWeight,
-        opacity: RouteOpacity,
-        lineCap: 'round',
-        lineJoin: 'round',
-      }).addTo(this.map);
+      this.routePolyline = L.polyline(
+        this.routeGeometry.map((point) => this.toLeafletCoordinates(point)),
+        {
+          color: this.routeMode === 'optimized' ? OptimizedRouteColor : RouteColor,
+          weight: RouteWeight,
+          opacity: RouteOpacity,
+          lineCap: 'round',
+          lineJoin: 'round',
+        },
+      ).addTo(this.map);
     }
 
-    this.fitMapToContent();
+    this.fitMapToContent(selectedVehicle);
   }
 
-  private fitMapToContent(): void {
+  private fitMapToContent(selectedVehicle: Vehicle | null): void {
     if (!this.map) {
       return;
     }
@@ -146,11 +173,13 @@ export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     const points: L.LatLngExpression[] = [];
 
     if (this.routeGeometry?.length) {
-      if (this.selectedVehicleLocation) points.push(this.toLeafletCoordinates(this.selectedVehicleLocation));
+      if (selectedVehicle) {
+        points.push(this.toLeafletCoordinates(selectedVehicle.liveLocation));
+      }
       points.push(...this.destinations.map((destination) => this.toLeafletCoordinates(destination)));
       points.push(...this.routeGeometry.map((point) => this.toLeafletCoordinates(point)));
-    } else if (this.focusOnSelectedVehicle && this.selectedVehicleLocation) {
-      points.push(this.toLeafletCoordinates(this.selectedVehicleLocation));
+    } else if (this.focusOnSelectedVehicle && selectedVehicle) {
+      points.push(this.toLeafletCoordinates(selectedVehicle.liveLocation));
     } else if (this.vehicles.length) {
       points.push(...this.vehicles.map((vehicle) => this.toLeafletCoordinates(vehicle.liveLocation)));
     }
