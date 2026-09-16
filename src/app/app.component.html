@@ -2,6 +2,7 @@
   <section class="mx-auto grid min-h-[660px] max-w-[1320px] grid-cols-[minmax(320px,404px)_minmax(0,1fr)] gap-5 max-[820px]:grid-cols-1 max-[820px]:min-h-0">
     <aside class="min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)] max-[820px]:min-h-[560px]">
       <app-vehicle-panel
+        [selectedVehicleId]="selectedVehicle.id"
         (routeCalculated)="handleRouteCalculated($event)"
         (destinationChanged)="handleDestinationChange($event)"
         (vehicleChanged)="handleVehicleChange($event)"
@@ -10,8 +11,7 @@
     <section class="min-w-0 overflow-hidden rounded-[14px] border border-[#dce3df] bg-white shadow-[0_12px_30px_rgba(40,62,54,0.06)]">
       <app-map-view
         [vehicles]="vehicles"
-        [truckLocation]="selectedVehicle.liveLocation"
-        [driverName]="selectedVehicle.driver"
+        [selectedVehicleLocation]="selectedVehicle.liveLocation"
         [destination]="destination"
         [routeGeometry]="routeGeometry"
         [focusOnSelectedVehicle]="hasUserSelectedVehicle"

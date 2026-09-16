@@ -30,7 +30,7 @@
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     </svg>
     <div class="grid gap-[3px]">
-      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Start (live location)</span>
+      <span class="text-[0.82rem] font-semibold tracking-[0.01em] text-[#7a8288]">Vehicle live location</span>
       <strong class="text-base font-medium text-[#202a2f]">{{ selectedVehicle.liveLocation.lat }}, {{ selectedVehicle.liveLocation.lng }}</strong>
     </div>
   </div>
@@ -42,7 +42,7 @@
       class="min-h-[52px] w-full rounded-lg border border-[#dce1e0] bg-white px-4 text-[1.05rem] text-[#172126] outline-none transition focus:border-[#2da67e] focus:shadow-[0_0_0_3px_rgba(45,166,126,0.12)]"
       type="text"
       [(ngModel)]="destinationText"
-      placeholder="31.4504, 74.2872"
+      placeholder="Latitude, longitude (decimal degrees)"
       (keyup.enter)="calculateRoute()"
     />
   </div>

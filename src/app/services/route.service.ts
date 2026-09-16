@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
+import { OsrmRouteOptions, OsrmRouteUrl } from '../constants/route.constants';
 import { Coordinate, RouteResult } from '../models/vehicle.model';
 
 interface OsrmRouteResponse {
@@ -16,12 +17,10 @@ interface OsrmRouteResponse {
 
 @Injectable({ providedIn: 'root' })
 export class RouteService {
-  private readonly osrmUrl = 'https://router.project-osrm.org/route/v1/driving';
-
   constructor(private readonly http: HttpClient) {}
 
-  calculateRoute(start: Coordinate, end: Coordinate): Observable<RouteResult> {
-    const url = `${this.osrmUrl}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
+  calculateRoute(startCoordinate: Coordinate, endCoordinate: Coordinate): Observable<RouteResult> {
+    const url = `${OsrmRouteUrl}/${startCoordinate.lng},${startCoordinate.lat};${endCoordinate.lng},${endCoordinate.lat}?${OsrmRouteOptions}`;
 
     return this.http.get<OsrmRouteResponse>(url).pipe(
       map((response) => {

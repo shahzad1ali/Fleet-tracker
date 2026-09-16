@@ -11,22 +11,6 @@
   color: #344148;
 }
 
-:host ::ng-deep .live-location-tooltip {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #19262c;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-:host ::ng-deep .live-location-tooltip::before {
-  display: none;
-}
-
 :host ::ng-deep .vehicle-name-tooltip {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.65);
